@@ -5,7 +5,7 @@
 // @include     http://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.23.7
+// @version     0.23.9
 // @description Calcule la faisabilitée des missions
 // @author      Passific
 // @grant       GM_getValue
@@ -170,7 +170,7 @@ function read_blocknote ()
 {
     if (!SAVE_BLOCKNOTE) {
         alert("Sauvegarde désactivée dans les paramètres...");
-        return;
+        return false;
     }
     
     $.ajax({
@@ -182,19 +182,24 @@ function read_blocknote ()
            tmp = JSON.parse( $(data).find("#message_note").val() );
         } catch(e) {
             alert( "Sauvegarde illisible ou vide...\nL'avez-vous modifiée manuellement ?" );
-            return console.error(e);
+            console.error(e);
+            return false;
         }
         if (null != tmp) {
             mes_avions = tmp;
             /* Save local settings */
             GM_setValue('mes_avions', mes_avions);
+            GM_setValue('last_session', this_time.getTime());
             alert("Lecture de la sauvegarde OK !");
+            return true;
         } else {
             alert( "Sauvegarde vide..." );
         }
+        return false;
     })
     .fail(function() {
         alert( "Erreur lors de la lecture...\nVeuillez réessayer l'opération manuellement." );
+        return false;
     });
 }
 
@@ -430,6 +435,11 @@ var mes_avions = GM_getValue('mes_avions', null);
  *       Main program       *
  ***************************/
 
+/* Test if not connected */
+if (content.match("vous n'êtes pas connecté")) {
+    return;
+}
+
 /* If no local copy, retreive the backup in the notepad */
 if (null == mes_avions && SAVE_BLOCKNOTE) {
     read_blocknote();
@@ -441,9 +451,12 @@ if (null == mes_avions && SAVE_BLOCKNOTE) {
     if ( (this_time.getTime() - last_time) > 12*3600*1000 ) {
         if (confirm("Voulez-vous charger la sauvegarde ?")) {
             read_blocknote();
+        } else {
+            GM_setValue('last_session', this_time.getTime());
         }
+    } else {
+       GM_setValue('last_session', this_time.getTime());
     }
-    GM_setValue('last_session', this_time.getTime());
 }
 
 /* Otherwise, initiate a clean start */
@@ -521,7 +534,7 @@ case "vos-avions":
     }
     
     var etat_moteur,etat_kero;
-    var current_planes = [], plane_count = 0;;
+    var current_planes = [], plane_count = 0;
     $(".vosavions:first tr").each(function(index) {
         var tableData = $(this).find('td');
         if (tableData.length > 0 && index != 0) {
@@ -623,7 +636,7 @@ case "vos-avions":
                         "<tr>" +
                             "<td class='vosavions7' colspan='9'>" +
                                "<b>"+mes_avions[avion]['type']+" - "+mes_avions[avion]['ref']+"</b>" +
-                               "n'est plus disponible, vous devez l'acheter - " +
+                               " n'est plus disponible, vous devez l'acheter - " +
                                "<a href='compte.php?page=acheter2&action=8&av="+avion_t[ mes_avions[avion]['type'] ]['id']
                                                                +"' data_id='"+avion
                                                                +"' data_type='"+mes_avions[avion]['type']
