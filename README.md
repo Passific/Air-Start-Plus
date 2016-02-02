@@ -15,7 +15,7 @@ Rendez vous simplement à cette adresse : https://raw.githubusercontent.com/Pass
 * Amélioration de l'affichage
 * Maintient une liste des avions et de leurs préférences
 * Sauvegarde (auto) pour une utilisation multiposte
+* Passer rapidement d'un aéroport à un autre
 
 ## Limitations
-* Avoir plusieurs aéroports n'est pas géré pour l'instant
 * Les groupes ne sont pas gérés pour l'instant

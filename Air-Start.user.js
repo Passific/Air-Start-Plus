@@ -454,6 +454,10 @@ if (null == mes_avions && SAVE_BLOCKNOTE) {
     if ( (this_time.getTime() - last_time) > 12*3600*1000 ) {
         if (confirm("Voulez-vous charger la sauvegarde ?")) {
             read_blocknote();
+            /* Reset current airport */
+            if (null != mes_aeroport) {
+                window.location.assign("compte.php?page=aeroport");
+            }
         } else {
             GM_setValue('last_session', this_time.getTime());
         }
@@ -529,7 +533,7 @@ for (key in mes_avions[id_aeroport]) {
     menu_bar += '<option value="'+key+'">'+mes_avions[id_aeroport][key]['type']+' - '+mes_avions[id_aeroport][key]['ref']+'</option>';
 }
 menu_bar += '</select></form></td>'
-          + '</tr><tr><td colspan=6 id="best_missions"></td></tr></tbody></table>';
+          + '</tr><tr><td colspan="7" id="best_missions"></td></tr></tbody></table>';
 
 $('body').append(menu_bar);
 
@@ -793,8 +797,13 @@ case 'action':
 case 'boutique1':
     var affiche = getParameterByName("affiche");
     /* Remplir vos citernes de kérosène */
-    if (5 == affiche)
+    if (5 == affiche) {
+        var citerne = content.match(/<strong>([0-9,]+)<\/strong> \/ <strong>([0-9,]+)<\/strong> litres/);
+        var citerne_lvl = Math.round((parseInt(citerne[1].replace(/,/g, ''))*100)/parseInt(citerne[2].replace(/,/g, '')));
+        $('img:first').after('<br><progress max="100" value="'+citerne_lvl+'"></progress> ('+citerne_lvl+'%)');
+        
         $('input[name="cq"]').val(parseInt(content.match(/Place.*>([0-9,]+)</i)[1].replace(/,/g, ''), 10));
+    }
     break;
     
 case 'mp':
@@ -813,19 +822,26 @@ case 'mp':
     
 case 'aeroport':
     if (undefined != $('select[name="id_aeroport"]').val()) {
-        if ("0" == id_aeroport) {
-            /*TODO: update for first new airport*/
-        }
-        id_aeroport = $('select[name="id_aeroport"]').val();
-        GM_setValue('id_aeroport', id_aeroport);
-        
         if (null == mes_aeroport) {
             mes_aeroport = {};
         }
         $('select[name="id_aeroport"] option').each(function(name, val){
             mes_aeroport[val.value] = val.text;
-        })
+            
+            /* First new airport */
+            if ("0" == id_aeroport) {
+                id_aeroport = val.value;
+                mes_avions[id_aeroport] = mes_avions["0"];
+                delete mes_avions["0"];
+                save_mes_avions(SILENT_SAVE);
+            }
+        });
+        
         GM_setValue('mes_aeroport', mes_aeroport);
+        
+        id_aeroport = $('select[name="id_aeroport"]').val();
+        GM_setValue('id_aeroport', id_aeroport);
+        
         
         $('select[name="id_aeroport"]').change(function(){GM_setValue('next_id_aeroport', $(this).val() );});
     }
