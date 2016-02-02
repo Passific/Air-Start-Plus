@@ -5,7 +5,7 @@
 // @include     http://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.30.4
+// @version     0.30.6
 // @description Calcule la faisabilitée des missions
 // @author      Passific
 // @grant       GM_getValue
