@@ -5,7 +5,7 @@
 // @include     http://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.30.6
+// @version     0.30.7
 // @description Calcule la faisabilitée des missions
 // @author      Passific
 // @grant       GM_getValue
@@ -457,6 +457,7 @@ if (null == mes_avions && SAVE_BLOCKNOTE) {
             /* Reset current airport */
             if (null != mes_aeroport) {
                 window.location.assign("compte.php?page=aeroport");
+                throw new Error("Stopped JavaScript.");
             }
         } else {
             GM_setValue('last_session', this_time.getTime());
@@ -800,7 +801,7 @@ case 'boutique1':
     if (5 == affiche) {
         var citerne = content.match(/<strong>([0-9,]+)<\/strong> \/ <strong>([0-9,]+)<\/strong> litres/);
         var citerne_lvl = Math.round((parseInt(citerne[1].replace(/,/g, ''))*100)/parseInt(citerne[2].replace(/,/g, '')));
-        $('img:first').after('<br><progress max="100" value="'+citerne_lvl+'"></progress> ('+citerne_lvl+'%)');
+        $('img[src="images/divers/citerne.gif"]').after('<br><progress max="100" value="'+citerne_lvl+'"></progress> ('+citerne_lvl+'%)');
         
         $('input[name="cq"]').val(parseInt(content.match(/Place.*>([0-9,]+)</i)[1].replace(/,/g, ''), 10));
     }
