@@ -5,7 +5,7 @@
 // @include     http://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.30.7
+// @version     0.31.5
 // @description Calcule la faisabilitée des missions
 // @author      Passific
 // @grant       GM_getValue
@@ -173,6 +173,8 @@ function read_blocknote ()
         return false;
     }
     
+    $("#loading").show();
+    
     $.ajax({
         url: "compte.php?page=mp&tp=4",
         async: false
@@ -183,7 +185,6 @@ function read_blocknote ()
         } catch(e) {
             alert( "Sauvegarde illisible ou vide...\nL'avez-vous modifiée manuellement ?" );
             console.error(e);
-            return false;
         }
         if (null != tmp) {
             mes_avions = tmp;
@@ -192,15 +193,14 @@ function read_blocknote ()
             var this_time = new Date();
             GM_setValue('last_session', this_time.getTime());
             alert("Lecture de la sauvegarde OK !");
-            return true;
         } else {
             alert( "Sauvegarde vide..." );
         }
-        return false;
+        $("#loading").hide();
     })
     .fail(function() {
         alert( "Erreur lors de la lecture...\nVeuillez réessayer l'opération manuellement." );
-        return false;
+        $("#loading").hide();
     });
 }
 
@@ -216,6 +216,8 @@ function save_blocknote(silent)
         alert("Rien à sauvegarder...");
         return;
     }
+    
+    $("#loading").show();
     $.ajax({
         url: "compte.php?page=mp&action=4&un=2&tp=4",
         data: {"message_note": JSON.stringify(mes_avions)},
@@ -229,9 +231,60 @@ function save_blocknote(silent)
         } else {
             alert( "Erreur inconnue lors de l'écriture..." );
         }
+        $("#loading").hide();
     })
     .fail(function() {
         alert( "Erreur lors de la sauvegarde...\nVeuillez réessayer l'opération manuellement." );
+        $("#loading").hide();
+    });
+}
+
+function go_maintenance (avion)
+{
+    $("#loading").show();
+    $.ajax({
+        url: "compte.php?page=action&action=30&id_avion="+avion,
+        async: false
+    })
+    .done(function(data) {
+        if ($(data).text().match(/Votre avion est maintenant en maintenance/)) {
+            set_maintenance(avion);
+        } else if ($(data).text().match(/votre avion ne peut être mis actuellement en maintenance/)) {
+            alert("L'avion ne peut être mis actuellement en maintenance...");
+        } else {
+            /* Erreur */ 
+        }
+        $("#loading").hide();
+    })
+    .fail(function() {
+        /* error */
+        $("#loading").hide();
+    });
+}
+
+function change_moteur (avion, moteur)
+{
+    $("#loading").show();
+    $.ajax({
+        url: "compte.php?page=action&action=9&id_avion="+avion,
+        async: false,
+        data: {"id_moteur": moteur},
+        method: "POST"
+    })
+    .done(function(data) {
+        if ( $(data).text().match("L'avion va bien recevoir ses nouveaux moteurs") ) {
+            mes_avions[id_aeroport][avion]['m_type'] = moteur;
+            save_mes_avions(SILENT_SAVE);
+            if (FIN_MAINTENANCE) {
+                set_maintenance(avion);
+            }
+        } else {
+            alert("L'avion ne peut être mis actuellement en maintenance...");
+        }
+        $("#loading").hide();
+    })
+    .fail(function() {
+        $("#loading").hide();
     });
 }
 
@@ -281,11 +334,9 @@ function select_todomission(tmp_id_avion, etat_moteur, etat_kero)
     }
     if (etat_moteur < 2) {
         alert("L'état des moteurs est insufisant !");
-        return;
     }
     if (etat_kero < 500) {
         alert("L'état des réservoirs est insufisant !");
-        return;
     }
     id_avion = tmp_id_avion;
     GM_setValue('id_avion', id_avion);
@@ -335,7 +386,7 @@ function check_missions()
         var trestant = Math.floor(restant/aller)
         var mo_marge = (etat_moteur - Math.ceil(heure)*2);
         if (do_escale) {
-            contrat += contrat/4; /*TODO: approximatif */
+            contrat += contrat/4; /*TODO: approximatif mais très proche */
             date_start = (new Date(date_start - (ESCALE_BONUS_H*3600000) ));
         }
         //-----------------------------
@@ -370,7 +421,7 @@ function check_missions()
     
     info_missions.sort(function(a,b) {
         var ret = 0;
-        if ("heure de départ" == SORT_BY) {
+        if ("heure de départ" === SORT_BY) {
             if (a[3]>b[3])
                 ret = 1;
             else if (a[3]<b[3])
@@ -388,9 +439,6 @@ function check_missions()
     if(0 == MAX_BEST) {return;}
     for (bests_mission in info_missions) {
         if (count < MAX_BEST) {
-            // Mission impossible...
-            //if(0 == info_missions[bests_mission][0])
-            //    continue;
             // Mission OK
             if (2 == info_missions[bests_mission][0]) {
                 best_shots += "<a class=\"lien\" "+(info_missions[bests_mission][5]?"style=\"color:MidnightBlue\" ":"")+"href='#"+info_missions[bests_mission][2]+"'>"
@@ -534,7 +582,8 @@ for (key in mes_avions[id_aeroport]) {
     menu_bar += '<option value="'+key+'">'+mes_avions[id_aeroport][key]['type']+' - '+mes_avions[id_aeroport][key]['ref']+'</option>';
 }
 menu_bar += '</select></form></td>'
-          + '</tr><tr><td colspan="7" id="best_missions"></td></tr></tbody></table>';
++ "<td><img id='loading' style='display:none;' src='http://project.passific.fr/scripts/savingimage.gif's></td>"
+          + '</tr><tr><td colspan="8" id="best_missions"></td></tr></tbody></table>';
 
 $('body').append(menu_bar);
 
@@ -565,7 +614,7 @@ case "vos-avions":
        ".vosavions img{max-height:39px;}");
     
     if (SAVE_BLOCKNOTE && !AUTO_SAVE ) {
-        $(".vosavions:first").after('<br><span><a id="save_avion" class="lien">Sauvegarde</a> / <a id="restore_avion" class="lien">Restauration</a> manuelle des avions.<br>' +
+        $(".vosavions:first").after('<br><span><a id="save_avion" class="lien">Sauvegarde</a> / <a id="restore_avion" class="lien">Restauration</a> manuelle des avions.<br>'+
                                      '<a href="compte.php?page=mp&tp=4" class="lien">Modifier</a> la sauvegarde.</span><br>');
         $("#save_avion").on("click", function() {save_blocknote(false);} );
         $("#restore_avion").on("click", function() {read_blocknote();} );
@@ -640,14 +689,16 @@ case "vos-avions":
                         if (1 != mes_avions[id_aeroport][tmp_avion]['m_type']) {
                             if (null != tableData[9].innerHTML.match('Changer !!')) {
                                 tableData[9].innerHTML = tableData[9].innerHTML.replace('Changer !!', '');
-                                tableData[9].innerHTML += ' <form action="compte.php?page=action&amp;action=9&amp;id_avion='+tmp_avion+'" method="post">' +
-                                                              '<input type="hidden" name="id_moteur" value="'+mes_avions[id_aeroport][tmp_avion]['m_type']+'">' +
-                                                              '<input value="Moteur '+mes_avions[id_aeroport][tmp_avion]['m_type']+'" type="submit"></form>';
+                                //tableData[9].innerHTML += ' <form action="compte.php?page=action&amp;action=9&amp;id_avion='+tmp_avion+'" method="post">' +
+                                //                              '<input type="hidden" name="id_moteur" value="'+mes_avions[id_aeroport][tmp_avion]['m_type']+'">' +
+                                //                              '<input value="Moteur '+mes_avions[id_aeroport][tmp_avion]['m_type']+'" type="submit"></form>';
+                                tableData[9].innerHTML += ' <a class="lien change_moteur" data_index="'+index+'" data_type="'+mes_avions[id_aeroport][tmp_avion]['m_type']
+                                                          +'" data_id="'+tmp_avion+'">Moteur '+mes_avions[id_aeroport][tmp_avion]['m_type']+'</a>';
                             }
                         } else if (isInactive) {
                             tableData[9].innerHTML += ' <form action="compte.php?page=action&amp;action=9&amp;id_avion='+tmp_avion+'" method="post">' +
                                                           '<input type="hidden" name="id_moteur" value="'+4+'">' +
-                                                          '<input value="Cheat '+4+'" type="submit"></form>';
+                                                          '<input value="Early '+4+'" type="submit"></form>';
                         }
                     //}
                 }
@@ -655,6 +706,7 @@ case "vos-avions":
                 if (tableData[2].innerHTML === "I") {
                     if (tableData[4].innerHTML.match(/Cliquer ici/) != null) {
                         tableData[2].innerHTML = "<font color='orange'>I (M)</font>";
+                        tableData[4].innerHTML = "L'avion a besoin d'une maintenance afin de pouvoir faire une mission - <a class='lien go_maintenance' data_index='"+index+"' data_id='"+tmp_avion+"'>Cliquer ici</a>"
                         nb_inactive_avion++;
                     } else if (tableData[4].innerHTML.match(/500,000 km/) != null) {
                         tableData[2].innerHTML = "<b><font color='red'>HS</font></b>";
@@ -679,7 +731,7 @@ case "vos-avions":
             for (avion in mes_avions[id_aeroport]) {
                 if (current_planes.indexOf(avion) < 0 ) {
                     $(".vosavions:first").append(
-                        "<tr>" +
+                        "<tr id='missing"+avion+"'>" +
                             "<td class='vosavions7' colspan='9'>" +
                                "<b>"+mes_avions[id_aeroport][avion]['type']+" - "+mes_avions[id_aeroport][avion]['ref']+"</b>" +
                                " n'est plus disponible, vous devez l'acheter - " +
@@ -688,7 +740,7 @@ case "vos-avions":
                                                                +"' data_type='"+mes_avions[id_aeroport][avion]['type']
                                                                +"' class='lien missing_plane'>Cliquez ici</a> " +
                                "(ou <a class='lien delete_plane' data_id='"+avion+"'>Supprimer</a>)" +
-                               "</td></tr>\n");
+                        "</td></tr>\n");
                 }
             }
         } else {
@@ -702,7 +754,9 @@ case "vos-avions":
             if (null != mes_avions[id_aeroport][ $(this).attr("data_id") ])
             if (confirm("Voulez-vous vraiment supprimer cet avion ?")) {
                 delete mes_avions[id_aeroport][ $(this).attr("data_id") ];
+                GM_setValue('avion_to_buy', null);
                 save_mes_avions(SILENT_SAVE);
+                $("#missing"+$(this).attr("data_id")).remove();
             }
         });
     }
@@ -710,6 +764,27 @@ case "vos-avions":
     $(".select_todomission").on("click", function() {
         select_todomission($(this).attr("data_id"), $(this).attr("data_mo"), $(this).attr("data_kero"));
     });
+    $(".go_maintenance").on("click", function() {
+        go_maintenance($(this).attr("data_id"));
+        if (null != mes_avions[id_aeroport][$(this).attr("data_id")]['h_maint']) {
+            $($(".vosavions:first tr")[$(this).attr("data_index")]).find('td')[2-REMOVE_THUMBNAIL].innerHTML = "M";
+            $($(".vosavions:first tr")[$(this).attr("data_index")]).find('td')[4-REMOVE_THUMBNAIL].innerHTML
+                = "Fin de maintenance à <b>"+ mes_avions[id_aeroport][$(this).attr("data_id")]['h_maint'] +"</b>";
+        } else {/* fallback */
+            window.location.assign("compte.php?page=action&action=30&id_avion="+$(this).attr("data_id"));
+        }
+    });
+    $(".change_moteur").on("click", function() {
+        change_moteur($(this).attr("data_id"), $(this).attr("data_type"));
+        if (null != mes_avions[id_aeroport][$(this).attr("data_id")]['h_maint']) {
+            $($(".vosavions:first tr")[$(this).attr("data_index")]).find('td')[2-REMOVE_THUMBNAIL].innerHTML = "M";
+            $($(".vosavions:first tr")[$(this).attr("data_index")]).find('td')[9-REMOVE_THUMBNAIL].innerHTML
+                = "Fin à <b>"+ mes_avions[id_aeroport][$(this).attr("data_id")]['h_maint'] +"</b>";
+        } else {/* fallback */
+            window.location.assign("compte.php?page=action&action=8&id_avion="+$(this).attr("data_id"));
+        }
+    });
+
     if (AUTO_REFRESH){
         window.setTimeout(function() {
             GM_setValue('is_refresh', true);
@@ -727,7 +802,7 @@ case 'vos-missions1':
     var tp = getParameterByName("tp");
     var pays_count = 0;
     for (key in mes_avions[id_aeroport]) {
-        if (pays == mes_avions[id_aeroport][key]['mission_pays'])
+        if ((pays == mes_avions[id_aeroport][key]['mission_pays']) && (tp == mes_avions[id_aeroport][id_avion]['mission_tp']))
             pays_count++;
     }
     $("#haut").before('<a class="lien" id="mission_for_plane" data_tp="'+tp+'" data_pays="'+pays+'">Enregistrer ce pays pour l\'avion courant</a> ('+pays_count+' actuellement)<br><br>')
@@ -743,7 +818,22 @@ case 'vos-missions1':
     break;
     
 case 'tableau-affichage':
+    GM_addStyle(".Taffichage tr:not(:first-child):hover{text-decoration: underline;}");
     $('.Taffichage:first').before(($('.Taffichage:first tr').length-1)+'/'+nb_avions+' en mission');
+    break;
+        
+case 'carnet-vol':
+    GM_addStyle(".Cvol tr:not(:first-child):hover{text-decoration: underline;}");
+    $(".Cvol:first tr").each(function(index) {
+        var tableData = $(this).find('td');
+        if (tableData.length >= 5 && index != 0) {
+            if (null != tableData[5].innerHTML.match(/Des terroristes/)) {
+               tableData[5].innerHTML = "<font color='red'>"+tableData[5].innerHTML+"</font>";
+            } else if (null != tableData[5].innerHTML.match(/Mauvaise météo/)) {
+                tableData[5].innerHTML = "<font color='orange'>"+tableData[5].innerHTML+"</font>";
+            }
+        }
+    });
     break;
     
 case 'action':
@@ -801,7 +891,8 @@ case 'boutique1':
     if (5 == affiche) {
         var citerne = content.match(/<strong>([0-9,]+)<\/strong> \/ <strong>([0-9,]+)<\/strong> litres/);
         var citerne_lvl = Math.round((parseInt(citerne[1].replace(/,/g, ''))*100)/parseInt(citerne[2].replace(/,/g, '')));
-        $('img[src="images/divers/citerne.gif"]').after('<br><progress max="100" value="'+citerne_lvl+'"></progress> ('+citerne_lvl+'%)');
+        $('img[src="images/divers/citerne.gif"]').after('<br><progress max="100" value="'+citerne_lvl+'"></progress> ('+citerne_lvl+'%)'
+               + '<br>Soit '+Math.floor(citerne[1].replace(/,/g, '')/plane_count_default).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")+' litres par avion');
         
         $('input[name="cq"]').val(parseInt(content.match(/Place.*>([0-9,]+)</i)[1].replace(/,/g, ''), 10));
     }
@@ -846,6 +937,13 @@ case 'aeroport':
         
         $('select[name="id_aeroport"]').change(function(){GM_setValue('next_id_aeroport', $(this).val() );});
     }
+    break;
+        
+case 'banque':
+    var balance = parseInt(content.match(/banque : <strong>([0-9,]+)<\/strong> \$/)[1].replace(/,/g, ''));
+    var taux = parseFloat($(".banque:nth-of-type(2) tr")[1].innerHTML.match(/([0-9.]+)%/)[1])/100;
+    $(".banque:nth-of-type(2)").append("<tr><td class='banque1'>Prochains intérêts</td><td class='banque1' colspan='2'>"
+                                       +Math.floor(balance*taux).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")+" $</td></tr>");
     break;
 }
 
