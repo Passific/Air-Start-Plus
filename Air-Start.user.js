@@ -5,7 +5,7 @@
 // @include     http://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.31.5
+// @version     0.31.6
 // @description Calcule la faisabilitée des missions
 // @author      Passific
 // @grant       GM_getValue
@@ -165,6 +165,18 @@ var SILENT_SAVE      = GM_config.get('SILENT_SAVE');
  *        Functions         *
  ***************************/
 
+function ajax_start ()
+{
+    $("#loading").show();
+    document.body.style.cursor = "wait";
+}
+
+function ajax_stop ()
+{
+    $("#loading").hide();
+    document.body.style.cursor = "default";
+}
+
 /* Restore backup from the notepad */
 function read_blocknote ()
 {
@@ -173,7 +185,7 @@ function read_blocknote ()
         return false;
     }
     
-    $("#loading").show();
+    ajax_start();
     
     $.ajax({
         url: "compte.php?page=mp&tp=4",
@@ -196,11 +208,11 @@ function read_blocknote ()
         } else {
             alert( "Sauvegarde vide..." );
         }
-        $("#loading").hide();
+        ajax_stop();
     })
     .fail(function() {
         alert( "Erreur lors de la lecture...\nVeuillez réessayer l'opération manuellement." );
-        $("#loading").hide();
+        ajax_stop();
     });
 }
 
@@ -217,7 +229,7 @@ function save_blocknote(silent)
         return;
     }
     
-    $("#loading").show();
+    ajax_start();
     $.ajax({
         url: "compte.php?page=mp&action=4&un=2&tp=4",
         data: {"message_note": JSON.stringify(mes_avions)},
@@ -231,17 +243,17 @@ function save_blocknote(silent)
         } else {
             alert( "Erreur inconnue lors de l'écriture..." );
         }
-        $("#loading").hide();
+        ajax_stop();
     })
     .fail(function() {
         alert( "Erreur lors de la sauvegarde...\nVeuillez réessayer l'opération manuellement." );
-        $("#loading").hide();
+        ajax_stop();
     });
 }
 
 function go_maintenance (avion)
 {
-    $("#loading").show();
+    ajax_start();
     $.ajax({
         url: "compte.php?page=action&action=30&id_avion="+avion,
         async: false
@@ -254,17 +266,17 @@ function go_maintenance (avion)
         } else {
             /* Erreur */ 
         }
-        $("#loading").hide();
+        ajax_stop();
     })
     .fail(function() {
         /* error */
-        $("#loading").hide();
+        ajax_stop();
     });
 }
 
 function change_moteur (avion, moteur)
 {
-    $("#loading").show();
+    ajax_start();
     $.ajax({
         url: "compte.php?page=action&action=9&id_avion="+avion,
         async: false,
@@ -278,13 +290,17 @@ function change_moteur (avion, moteur)
             if (FIN_MAINTENANCE) {
                 set_maintenance(avion);
             }
+        } else if ( $(data).text().match("vous n'avez pas assez de mécaniciens") ) {
+            alert("Pas assez de mécaniciens...");
+        } else if ( $(data).text().match("vous n'avez pas assez de moteurs") ) {
+            alert("Pas assez de moteurs...");
         } else {
             alert("L'avion ne peut être mis actuellement en maintenance...");
         }
-        $("#loading").hide();
+        ajax_stop();
     })
     .fail(function() {
-        $("#loading").hide();
+        ajax_stop();
     });
 }
 
