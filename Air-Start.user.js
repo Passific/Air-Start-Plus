@@ -5,7 +5,7 @@
 // @include     http://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.31.6
+// @version     0.31.7
 // @description Calcule la faisabilitée des missions
 // @author      Passific
 // @grant       GM_getValue
@@ -291,9 +291,12 @@ function change_moteur (avion, moteur)
                 set_maintenance(avion);
             }
         } else if ( $(data).text().match("vous n'avez pas assez de mécaniciens") ) {
-            alert("Pas assez de mécaniciens...");
+            var tmp = $(data).text().match(/Vous avez ([0-9]+) mécanicien, il vous en faut ([0-9]+)/);
+            alert("Pas assez de mécaniciens... ("+tmp[1]+"/"+tmp[2]+")");
         } else if ( $(data).text().match("vous n'avez pas assez de moteurs") ) {
-            alert("Pas assez de moteurs...");
+            var tmp1 = $(data).text().match(/vous en avez ([0-9]+)/);
+            var tmp2 = $(data).text().match(/il en faut ([0-9]+)/);
+            alert("Pas assez de moteurs... ("+tmp1[1]+"/"+tmp2[1]+")");
         } else {
             alert("L'avion ne peut être mis actuellement en maintenance...");
         }
@@ -787,7 +790,7 @@ case "vos-avions":
             $($(".vosavions:first tr")[$(this).attr("data_index")]).find('td')[4-REMOVE_THUMBNAIL].innerHTML
                 = "Fin de maintenance à <b>"+ mes_avions[id_aeroport][$(this).attr("data_id")]['h_maint'] +"</b>";
         } else {/* fallback */
-            window.location.assign("compte.php?page=action&action=30&id_avion="+$(this).attr("data_id"));
+            //window.location.assign("compte.php?page=action&action=30&id_avion="+$(this).attr("data_id"));
         }
     });
     $(".change_moteur").on("click", function() {
@@ -797,7 +800,7 @@ case "vos-avions":
             $($(".vosavions:first tr")[$(this).attr("data_index")]).find('td')[9-REMOVE_THUMBNAIL].innerHTML
                 = "Fin à <b>"+ mes_avions[id_aeroport][$(this).attr("data_id")]['h_maint'] +"</b>";
         } else {/* fallback */
-            window.location.assign("compte.php?page=action&action=8&id_avion="+$(this).attr("data_id"));
+            //window.location.assign("compte.php?page=action&action=8&id_avion="+$(this).attr("data_id"));
         }
     });
 
@@ -958,8 +961,9 @@ case 'aeroport':
 case 'banque':
     var balance = parseInt(content.match(/banque : <strong>([0-9,]+)<\/strong> \$/)[1].replace(/,/g, ''));
     var taux = parseFloat($(".banque:nth-of-type(2) tr")[1].innerHTML.match(/([0-9.]+)%/)[1])/100;
+    var interets = Math.floor(balance*taux);
     $(".banque:nth-of-type(2)").append("<tr><td class='banque1'>Prochains intérêts</td><td class='banque1' colspan='2'>"
-                                       +Math.floor(balance*taux).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")+" $</td></tr>");
+                                       +interets.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")+" $ ("+(balance+interets).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")+" $)</td></tr>");
     break;
 }
 
