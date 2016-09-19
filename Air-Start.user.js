@@ -5,7 +5,7 @@
 // @include     http://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.31.7
+// @version     0.31.8
 // @description Calcule la faisabilitée des missions
 // @author      Passific
 // @grant       GM_getValue
@@ -165,16 +165,21 @@ var SILENT_SAVE      = GM_config.get('SILENT_SAVE');
  *        Functions         *
  ***************************/
 
+/* To ask user if wait for backup complete */
+window.onbeforeunload = null;
+
 function ajax_start ()
 {
     $("#loading").show();
     document.body.style.cursor = "wait";
+    window.onbeforeunload = function () {return "Attendre la fin de la sauvegarde ?";};
 }
 
 function ajax_stop ()
 {
     $("#loading").hide();
     document.body.style.cursor = "default";
+    window.onbeforeunload = null;
 }
 
 /* Restore backup from the notepad */
@@ -291,7 +296,7 @@ function change_moteur (avion, moteur)
                 set_maintenance(avion);
             }
         } else if ( $(data).text().match("vous n'avez pas assez de mécaniciens") ) {
-            var tmp = $(data).text().match(/Vous avez ([0-9]+) mécanicien, il vous en faut ([0-9]+)/);
+            var tmp = $(data).text().match(/Vous avez ([0-9]+) mécaniciens?, il vous en faut ([0-9]+)/);
             alert("Pas assez de mécaniciens... ("+tmp[1]+"/"+tmp[2]+")");
         } else if ( $(data).text().match("vous n'avez pas assez de moteurs") ) {
             var tmp1 = $(data).text().match(/vous en avez ([0-9]+)/);
