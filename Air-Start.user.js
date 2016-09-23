@@ -5,7 +5,7 @@
 // @include     http://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.31.8
+// @version     0.31.10
 // @description Calcule la faisabilitée des missions
 // @author      Passific
 // @grant       GM_getValue
@@ -77,6 +77,18 @@ GM_config.init(
             'label': 'Afficher le temps restant des moteurs',
             'default': true
         },
+        'ENGIME_EARLY': {
+            'type': 'checkbox',
+            'label': 'Changement anticipé des moteurs',
+            'default': false
+        },
+        'ENGIME_EARLY_VALUE': {
+            'label': 'Type de moteur pour les changements anticipés',
+            'type': 'int',
+            'min': 2,
+            'max': 4,
+            'default': 4
+        },
         'FIN_MAINTENANCE': {
             'type': 'checkbox',
             'label': 'Affiche l\'heure de fin des maintenances',
@@ -144,29 +156,42 @@ GM_config.init(
     }
 });
 
-var WARNING_LEVEL    = GM_config.get('WARNING_LEVEL');
-var SORT_BY          = GM_config.get('SORT_BY');
-var ENABLE_ESCALE    = GM_config.get('ENABLE_ESCALE');
-var ESCALE_BONUS_H   = GM_config.get('ESCALE_BONUS_H');
-var TAB_DYN_TITLE    = GM_config.get('TAB_DYN_TITLE');
-var AUTO_REFRESH     = GM_config.get('AUTO_REFRESH');
-var MAX_BEST         = GM_config.get('MAX_BEST');
-var ENGIME_REVERSE   = GM_config.get('ENGIME_REVERSE');
-var FIN_MAINTENANCE  = GM_config.get('FIN_MAINTENANCE');
-var REMOVE_THUMBNAIL = GM_config.get('REMOVE_THUMBNAIL');
-var DIRECT_LINK      = GM_config.get('DIRECT_LINK');
-var MISSING_PLANES   = GM_config.get('MISSING_PLANES');
-var SAVE_BLOCKNOTE   = GM_config.get('SAVE_BLOCKNOTE');
-var SAVE_LOGIN_CHECK = GM_config.get('SAVE_LOGIN_CHECK');
-var AUTO_SAVE        = GM_config.get('AUTO_SAVE');
-var SILENT_SAVE      = GM_config.get('SILENT_SAVE');
+var WARNING_LEVEL      = GM_config.get('WARNING_LEVEL');
+var SORT_BY            = GM_config.get('SORT_BY');
+var ENABLE_ESCALE      = GM_config.get('ENABLE_ESCALE');
+var ESCALE_BONUS_H     = GM_config.get('ESCALE_BONUS_H');
+var TAB_DYN_TITLE      = GM_config.get('TAB_DYN_TITLE');
+var AUTO_REFRESH       = GM_config.get('AUTO_REFRESH');
+var MAX_BEST           = GM_config.get('MAX_BEST');
+var ENGIME_REVERSE     = GM_config.get('ENGIME_REVERSE');
+var ENGIME_EARLY       = GM_config.get('ENGIME_EARLY');
+var ENGIME_EARLY_VALUE = GM_config.get('ENGIME_EARLY_VALUE');
+var FIN_MAINTENANCE    = GM_config.get('FIN_MAINTENANCE');
+var REMOVE_THUMBNAIL   = GM_config.get('REMOVE_THUMBNAIL');
+var DIRECT_LINK        = GM_config.get('DIRECT_LINK');
+var MISSING_PLANES     = GM_config.get('MISSING_PLANES');
+var SAVE_BLOCKNOTE     = GM_config.get('SAVE_BLOCKNOTE');
+var SAVE_LOGIN_CHECK   = GM_config.get('SAVE_LOGIN_CHECK');
+var AUTO_SAVE          = GM_config.get('AUTO_SAVE');
+var SILENT_SAVE        = GM_config.get('SILENT_SAVE');
+
+/* To ask user if wait for backup complete */
+window.onbeforeunload = null;
+var document_title = document.title;
 
 /****************************
  *        Functions         *
  ***************************/
 
-/* To ask user if wait for backup complete */
-window.onbeforeunload = null;
+function update_title(nb)
+{
+    if (0 != nb) {
+        document.title = "(" + nb_inactive_avion + ") " + document_title;
+    }
+    else {
+        document.title = document_title;
+    }
+}
 
 function ajax_start ()
 {
@@ -187,7 +212,7 @@ function read_blocknote ()
 {
     if (!SAVE_BLOCKNOTE) {
         alert("Sauvegarde désactivée dans les paramètres...");
-        return false;
+        return;
     }
     
     ajax_start();
@@ -337,6 +362,7 @@ function set_maintenance(avion)
     var tmp_date = new Date(new Date().getTime() + 2*3600000);
     mes_avions[id_aeroport][avion]['h_maint'] = (tmp_date.getHours()<10?"0":"") + tmp_date.getHours() + "h"
                                  + (tmp_date.getMinutes()<10?"0":"") + tmp_date.getMinutes();
+    update_title(--nb_inactive_avion);
     save_mes_avions(SILENT_SAVE);
 }
 
@@ -709,22 +735,18 @@ case "vos-avions":
                 
                 if (ENGIME_REVERSE) {
                     tableData[9].innerHTML = tableData[9].innerHTML.replace(/([0-9,]+) \/ ([0-9,]+)/, ""+(etat_moteur[2]-etat_moteur[1])+" / $2");
-                    //if (null != tableData[9].innerHTML.match('Changer !!') || 1) {
-                        if (1 != mes_avions[id_aeroport][tmp_avion]['m_type']) {
-                            if (null != tableData[9].innerHTML.match('Changer !!')) {
-                                tableData[9].innerHTML = tableData[9].innerHTML.replace('Changer !!', '');
-                                //tableData[9].innerHTML += ' <form action="compte.php?page=action&amp;action=9&amp;id_avion='+tmp_avion+'" method="post">' +
-                                //                              '<input type="hidden" name="id_moteur" value="'+mes_avions[id_aeroport][tmp_avion]['m_type']+'">' +
-                                //                              '<input value="Moteur '+mes_avions[id_aeroport][tmp_avion]['m_type']+'" type="submit"></form>';
-                                tableData[9].innerHTML += ' <a class="lien change_moteur" data_index="'+index+'" data_type="'+mes_avions[id_aeroport][tmp_avion]['m_type']
-                                                          +'" data_id="'+tmp_avion+'">Moteur '+mes_avions[id_aeroport][tmp_avion]['m_type']+'</a>';
-                            }
-                        } else if (isInactive) {
-                            tableData[9].innerHTML += ' <form action="compte.php?page=action&amp;action=9&amp;id_avion='+tmp_avion+'" method="post">' +
-                                                          '<input type="hidden" name="id_moteur" value="'+4+'">' +
-                                                          '<input value="Early '+4+'" type="submit"></form>';
+                    if (1 != mes_avions[id_aeroport][tmp_avion]['m_type']) {
+                        if (null != tableData[9].innerHTML.match('Changer !!')) {
+                            tableData[9].innerHTML = tableData[9].innerHTML.replace('Changer !!', '');
+                            tableData[9].innerHTML += ' <a class="lien change_moteur" data_index="'+index+'" data_type="'+mes_avions[id_aeroport][tmp_avion]['m_type']
+                                +'" data_id="'+tmp_avion+'">Moteur '+mes_avions[id_aeroport][tmp_avion]['m_type']+'</a>';
                         }
-                    //}
+                    } else if (isInactive && ENGIME_EARLY) {
+                        /* Little trick to change earlier the engine */
+                        if (null == tableData[9].innerHTML.match('Changer !!')) {
+                           tableData[9].innerHTML += ' <a class="lien change_moteur" data_index="'+index+'" data_type="'+ENGIME_EARLY_VALUE+'" data_id="'+tmp_avion+'">(early '+ENGIME_EARLY_VALUE+')</a>';
+                        }
+                    }
                 }
             } else {
                 if (tableData[2].innerHTML === "I") {
@@ -941,8 +963,20 @@ case 'aeroport':
         if (null == mes_aeroport) {
             mes_aeroport = {};
         }
-        $('select[name="id_aeroport"] option').each(function(name, val){
+        
+        /* Copie of airport list to find solds one */
+        mes_aeroport_copie = {};
+        for (key in mes_aeroport) {
+           mes_aeroport_copie[key] = mes_aeroport[key];
+        }
+        $('select[name="id_aeroport"] option').each(function(name, val) {
+            /* New airport and rename */
             mes_aeroport[val.value] = val.text;
+            
+            /* Find sold airport */
+            if (undefined != mes_aeroport_copie[val.value]) {
+                delete mes_aeroport_copie[val.value];
+            }
             
             /* First new airport */
             if ("0" == id_aeroport) {
@@ -952,6 +986,13 @@ case 'aeroport':
                 save_mes_avions(SILENT_SAVE);
             }
         });
+        
+        /* Delete sold airport */
+        for (key in mes_aeroport_copie) {
+            if (undefined != mes_aeroport) {
+                delete mes_aeroport[key];
+            }
+        }
         
         GM_setValue('mes_aeroport', mes_aeroport);
         
@@ -964,11 +1005,13 @@ case 'aeroport':
     break;
         
 case 'banque':
-    var balance = parseInt(content.match(/banque : <strong>([0-9,]+)<\/strong> \$/)[1].replace(/,/g, ''));
-    var taux = parseFloat($(".banque:nth-of-type(2) tr")[1].innerHTML.match(/([0-9.]+)%/)[1])/100;
-    var interets = Math.floor(balance*taux);
-    $(".banque:nth-of-type(2)").append("<tr><td class='banque1'>Prochains intérêts</td><td class='banque1' colspan='2'>"
-                                       +interets.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")+" $ ("+(balance+interets).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")+" $)</td></tr>");
+    if (null != content.match(/banque : <strong>([0-9,]+)<\/strong> \$/)) {
+        var balance = parseInt(content.match(/banque : <strong>([0-9,]+)<\/strong> \$/)[1].replace(/,/g, ''));
+        var taux = parseFloat($(".banque:nth-of-type(2) tr")[1].innerHTML.match(/([0-9.]+)%/)[1])/100;
+        var interets = Math.floor(balance*taux);
+        $(".banque:nth-of-type(2)").append("<tr><td class='banque1'>Prochains intérêts</td><td class='banque1' colspan='2'>"
+                                           +interets.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")+" $ ("+(balance+interets).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")+" $)</td></tr>");
+    }
     break;
 }
 
@@ -977,7 +1020,7 @@ if (0 != nb_inactive_avion && TAB_DYN_TITLE) {
         GM_setValue('last_nb_inactive_avion', nb_inactive_avion);
         window.location.reload();
     }
-    document.title = "(" + nb_inactive_avion + ") " + document.title;
+    update_title(nb_inactive_avion);
 }
 
 GM_setValue('is_refresh', false);
