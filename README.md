@@ -17,6 +17,7 @@ Rendez-vous simplement à cette adresse : https://raw.githubusercontent.com/Pass
 * Gestion améliorée de la maintenance des avions
 * Sauvegarde (auto) pour une utilisation multiposte
 * Passer rapidement d'un aéroport à un autre
+* Checklist pour les aéroports
 
 ## Limitations
 * Les groupes ne sont pas gérés pour l'instant
