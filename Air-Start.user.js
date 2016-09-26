@@ -5,7 +5,7 @@
 // @include     http://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.32.1
+// @version     0.32.3
 // @description Calcule la faisabilitée des missions
 // @author      Passific
 // @grant       GM_getValue
@@ -327,11 +327,15 @@ function change_moteur (avion, moteur)
             }
         } else if ( $(data).text().match("vous n'avez pas assez de mécaniciens") ) {
             var tmp = $(data).text().match(/Vous avez ([0-9]+) mécaniciens?, il vous en faut ([0-9]+)/);
-            alert("Pas assez de mécaniciens... ("+tmp[1]+"/"+tmp[2]+")");
+            if (null != tmp) {
+               alert("Pas assez de mécaniciens... ("+tmp[1]+"/"+tmp[2]+")");
+            }
         } else if ( $(data).text().match("vous n'avez pas assez de moteurs") ) {
             var tmp1 = $(data).text().match(/vous en avez ([0-9]+)/);
             var tmp2 = $(data).text().match(/il en faut ([0-9]+)/);
-            alert("Pas assez de moteurs... ("+tmp1[1]+"/"+tmp2[1]+")");
+            if (null != tmp1 && null != tmp2) {
+               alert("Pas assez de moteurs... ("+tmp1[1]+"/"+tmp2[1]+")");
+            }
         } else {
             alert("L'avion ne peut être mis actuellement en maintenance...");
         }
@@ -746,28 +750,41 @@ case "vos-avions":
                             tableData[9].innerHTML += ' <a class="lien change_moteur" data_index="'+index+'" data_type="'+mes_avions[id_aeroport][tmp_avion]['m_type']
                                 +'" data_id="'+tmp_avion+'">Moteur '+mes_avions[id_aeroport][tmp_avion]['m_type']+'</a>';
                         }
-                    } else if (isInactive && ENGIME_EARLY) {
-                        /* Little trick to change earlier the engine */
-                        if (null == tableData[9].innerHTML.match('Changer !!')) {
-                           tableData[9].innerHTML += ' <a class="lien change_moteur" data_index="'+index+'" data_type="'+ENGIME_EARLY_VALUE+'" data_id="'+tmp_avion+'">(early '+ENGIME_EARLY_VALUE+')</a>';
+                    }
+                    else if (isInactive) {
+                        /* Choose engine */
+                        if ((null != tableData[9].innerHTML.match('Changer !!')) ||
+                            ((null == tableData[9].innerHTML.match('Changer !!')) && ENGIME_EARLY) ) {
+                            if (100 == etat_moteur[2]) {
+                                tableData[9].innerHTML = tableData[9].innerHTML.replace('Changer !!', '');
+                                tableData[9].innerHTML += ' <a class="lien change_moteur" data_index="'+index+'" data_type="'+6
+                                +'" data_id="'+tmp_avion+'">Moteur '+6+'</a>';
+                            }
+                            else {
+                                tableData[9].innerHTML += "<br>";
+                                for (i=1;i<=5;++i) {
+                                    tableData[9].innerHTML += ' <a class="lien change_moteur" data_index="'+index+'" data_type="'+i
+                                        +'" data_id="'+tmp_avion+'">'+i+'</a>';
+                                }
+                            }
                         }
                     }
                 }
             } else {
-                if (tableData[2].innerHTML === "I") {
-                    if (tableData[4].innerHTML.match(/Cliquer ici/) != null) {
+                if ("I" === tableData[2].innerHTML) {
+                    if (null != tableData[4].innerHTML.match(/Cliquer ici/)) {
                         tableData[2].innerHTML = "<font color='orange'>I (M)</font>";
                         tableData[4].innerHTML = "L'avion a besoin d'une maintenance afin de pouvoir faire une mission - <a class='lien go_maintenance' data_index='"+index+"' data_id='"+tmp_avion+"'>Cliquer ici</a>"
                         nb_inactive_avion++;
-                    } else if (tableData[4].innerHTML.match(/500,000 km/) != null) {
+                    } else if (null != tableData[4].innerHTML.match(/500,000 km/)) {
                         tableData[2].innerHTML = "<b><font color='red'>HS</font></b>";
                     } else {
                         tableData[2].innerHTML = "M";
-                        if (null != mes_avions[id_aeroport][tmp_avion]['h_maint'] && FIN_MAINTENANCE) {
+                        if (undefined != mes_avions[id_aeroport][tmp_avion]['h_maint'] && FIN_MAINTENANCE) {
                             tableData[4].innerHTML = "Fin de maintenance à <b>" + mes_avions[id_aeroport][tmp_avion]['h_maint'] + "</b>";
                         }
                     }
-                } else if (tableData[4].innerHTML.match(/Cliquer ici/) != null) {
+                } else if (null != tableData[4].innerHTML.match(/Cliquer ici/)) {
                     tableData[4].innerHTML = "L'avion aura besoin d'une maintenance afin de pouvoir faire une mission";
                 }
                 tableData[3].innerHTML = "<a class='lien select_todomission' data_id='"+tmp_avion+"'>"+tableData[3].innerHTML+"</a>";
@@ -817,7 +834,7 @@ case "vos-avions":
     });
     $(".go_maintenance").on("click", function() {
         go_maintenance($(this).attr("data_id"));
-        if (null != mes_avions[id_aeroport][$(this).attr("data_id")]['h_maint']) {
+        if (undefined != mes_avions[id_aeroport][$(this).attr("data_id")]['h_maint']) {
             $($(".vosavions:first tr")[$(this).attr("data_index")]).find('td')[2-REMOVE_THUMBNAIL].innerHTML = "M";
             $($(".vosavions:first tr")[$(this).attr("data_index")]).find('td')[4-REMOVE_THUMBNAIL].innerHTML
                 = "Fin de maintenance à <b>"+ mes_avions[id_aeroport][$(this).attr("data_id")]['h_maint'] +"</b>";
@@ -827,7 +844,7 @@ case "vos-avions":
     });
     $(".change_moteur").on("click", function() {
         change_moteur($(this).attr("data_id"), $(this).attr("data_type"));
-        if (null != mes_avions[id_aeroport][$(this).attr("data_id")]['h_maint']) {
+        if (undefined != mes_avions[id_aeroport][$(this).attr("data_id")]['h_maint']) {
             $($(".vosavions:first tr")[$(this).attr("data_index")]).find('td')[2-REMOVE_THUMBNAIL].innerHTML = "M";
             $($(".vosavions:first tr")[$(this).attr("data_index")]).find('td')[9-REMOVE_THUMBNAIL].innerHTML
                 = "Fin à <b>"+ mes_avions[id_aeroport][$(this).attr("data_id")]['h_maint'] +"</b>";
@@ -1014,14 +1031,14 @@ case 'votre-aeroport':
     var entrepots  = parseInt(content.match(/entrepôts : <strong>([0-9,]+)<\/strong>/)[1]);
     var reputation = parseInt(content.match(/Réputation : <strong>([0-9,]+)<\/strong>/)[1].replace(/,/g, ''));
     var pistes     = parseInt(content.match(/décollage : <strong>([0-9,]+)<\/strong>/)[1]);
-    var radars     = content.match(/<strong>([0-9,]+)<\/strong> actifs \(<strong>([0-9,]+)<\/strong> avions\) et <strong>([0-9,]+)<\/strong> inactif/);
+    var radars     = content.match(/<strong>([0-9,]+)<\/strong> actifs? \(<strong>([0-9,]+)<\/strong> avions\) et <strong>([0-9,]+)<\/strong> inactif/);
     var radars_actifs   = parseInt(radars[1]);
     var radars_inactifs = parseInt(radars[3]);
     var detecteurs = parseInt(content.match(/métaux : <strong>([0-9,]+)<\/strong>/)[1]);
-    var detecteurs_actifs = parseInt(content.match(/actifs pour <strong>([0-9,]+)<\/strong>/)[1]);
-    var parkings    = parseInt(content.match(/Parkings : <strong>([0-9,]+)<\/strong>/)[1]);
-    var restaurants = parseInt(content.match(/Restaurants : <strong>([0-9,]+)<\/strong>/)[1]);
-    var sec_agents  = parseInt(content.match(/<strong>([0-9,]+)<\/strong> agents/)[1]);
+    var detecteurs_actifs = parseInt(content.match(/actifs? pour <strong>([0-9,]+)<\/strong>/)[1]);
+    var parkings    = parseInt(content.match(/Parkings? : <strong>([0-9,]+)<\/strong>/)[1]);
+    var restaurants = parseInt(content.match(/Restaurants? : <strong>([0-9,]+)<\/strong>/)[1]);
+    var sec_agents  = parseInt(content.match(/<strong>([0-9,]+)<\/strong> agents?/)[1]);
     $("td.section table:first tbody").append('<tr class="action_list"><td colspan="2" width="100%" align="center"><br><strong>Liste des actions :</strong></td></tr>');
     var action_count = 0;
     
@@ -1092,11 +1109,15 @@ case 'votre-aeroport':
             $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange">Nombre de détecteurs de métaux actifs suffisant, mais attention lors de l\'achat d\'un avion !</font></td></tr>');
             action_count++;
         }
-    }
-    /* Security agents */
-    if (sec_agents < (detecteurs + (parkings*3))) {
-        $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">Nombre d\'agents de sécurité insuffisant ('+sec_agents+' / '+(detecteurs + (parkings*3))+') !</font></td></tr>');
-        action_count++;
+        /* Security agents */
+        if (sec_agents < ((nb_avions*2) + (parkings*3))) {
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">Nombre d\'agents de sécurité insuffisant ('+sec_agents+' / '+((nb_avions*2) + (parkings*3))+') !</font></td></tr>');
+            action_count++;
+        }
+        else if (sec_agents < ((entrepots*2) + (parkings*3))) {
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange">Nombre d\'agents de sécurité suffisant, mais attention lors de l\'achat d\'un avion !</font></td></tr>');
+            action_count++;
+        }
     }
     /* Check parkings & restaurants */
     if (entrepots > 3) {
