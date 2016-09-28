@@ -5,7 +5,7 @@
 // @include     http://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.32.3
+// @version     0.32.4
 // @description Calcule la faisabilitée des missions
 // @author      Passific
 // @grant       GM_getValue
@@ -81,13 +81,6 @@ GM_config.init(
             'type': 'checkbox',
             'label': 'Changement anticipé des moteurs',
             'default': false
-        },
-        'ENGIME_EARLY_VALUE': {
-            'label': 'Type de moteur pour les changements anticipés',
-            'type': 'int',
-            'min': 2,
-            'max': 4,
-            'default': 4
         },
         'FIN_MAINTENANCE': {
             'type': 'checkbox',
@@ -165,7 +158,6 @@ var AUTO_REFRESH       = GM_config.get('AUTO_REFRESH');
 var MAX_BEST           = GM_config.get('MAX_BEST');
 var ENGIME_REVERSE     = GM_config.get('ENGIME_REVERSE');
 var ENGIME_EARLY       = GM_config.get('ENGIME_EARLY');
-var ENGIME_EARLY_VALUE = GM_config.get('ENGIME_EARLY_VALUE');
 var FIN_MAINTENANCE    = GM_config.get('FIN_MAINTENANCE');
 var REMOVE_THUMBNAIL   = GM_config.get('REMOVE_THUMBNAIL');
 var DIRECT_LINK        = GM_config.get('DIRECT_LINK');
