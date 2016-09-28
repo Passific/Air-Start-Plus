@@ -182,11 +182,13 @@ function format_number(nb)
 
 function update_title(nb)
 {
-    if (0 != nb) {
-        document.title = "(" + nb_inactive_avion + ") " + document_title;
-    }
-    else {
-        document.title = document_title;
+    if (TAB_DYN_TITLE) {
+        if (0 != nb) {
+            document.title = "(" + nb_inactive_avion + ") " + document_title;
+        }
+        else {
+            document.title = document_title;
+        }
     }
 }
 
@@ -1138,7 +1140,7 @@ case 'banque':
     break;
 }
 
-if (0 != nb_inactive_avion && TAB_DYN_TITLE) {
+if (0 != nb_inactive_avion) {
     if (0 == GM_getValue('last_nb_inactive_avion', 1) && AUTO_REFRESH && GM_getValue('is_refresh', false) ) {
         GM_setValue('last_nb_inactive_avion', nb_inactive_avion);
         window.location.reload();
