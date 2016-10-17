@@ -5,7 +5,7 @@
 // @include     http://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.32.4
+// @version     0.32.5
 // @description Calcule la faisabilitée des missions
 // @author      Passific
 // @grant       GM_getValue
@@ -1033,6 +1033,7 @@ case 'votre-aeroport':
     var parkings    = parseInt(content.match(/Parkings? : <strong>([0-9,]+)<\/strong>/)[1]);
     var restaurants = parseInt(content.match(/Restaurants? : <strong>([0-9,]+)<\/strong>/)[1]);
     var sec_agents  = parseInt(content.match(/<strong>([0-9,]+)<\/strong> agents?/)[1]);
+    var caissieres  = parseInt(content.match(/<strong>([0-9,]+)<\/strong> caissières?/)[1]);
     $("td.section table:first tbody").append('<tr class="action_list"><td colspan="2" width="100%" align="center"><br><strong>Liste des actions :</strong></td></tr>');
     var action_count = 0;
     
@@ -1051,7 +1052,10 @@ case 'votre-aeroport':
     if ((undefined != next_reputation[entrepots]) && (0 != next_reputation[entrepots])) {
         var missing_rep = next_reputation[entrepots] - reputation;
         if (missing_rep > 0) {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center">Réputation manquante avant prochain agrandissement : '+missing_rep+' / '+format_number(next_reputation[entrepots])+'</td></tr>');
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center">Réputation manquante avant prochain agrandissement : '+format_number(missing_rep)+' / '+format_number(next_reputation[entrepots])+'</td></tr>');
+        }
+        else if (missing_rep > -500) {
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange">Réputation suffisante pour le prochain agrandissement ('+format_number(next_reputation[entrepots])+'), mais faible après achat !</font></td></tr>');
         }
         else {
             $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="green">Réputation suffisante pour le prochain agrandissement ('+format_number(next_reputation[entrepots])+') !</font></td></tr>');
@@ -1121,6 +1125,10 @@ case 'votre-aeroport':
         }
         if (restaurants < 1) {
             $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">Nombre de restaurant insuffisant (minimum 1) !</font></td></tr>');
+            action_count++;
+        }
+        if (caissieres < (restaurants * 5)) {
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">Nombre de caissière insuffisant ('+caissieres+' / '+((restaurants<1?1:restaurants) * 5)+') !</font></td></tr>');
             action_count++;
         }
     }
