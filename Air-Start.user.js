@@ -5,7 +5,7 @@
 // @include     http://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.32.5
+// @version     0.32.6
 // @description Calcule la faisabilitée des missions
 // @author      Passific
 // @grant       GM_getValue
@@ -1022,18 +1022,23 @@ case 'aeroport':
 
 case 'votre-aeroport':
     /* Check list for the airport */
-    var entrepots  = parseInt(content.match(/entrepôts : <strong>([0-9,]+)<\/strong>/)[1]);
+    var entrepots  = parseInt(content.match(/entrepôts : <strong>([0-9,]+)<\/strong>/)[1].replace(/,/g, ''));
+    var avions     = parseInt(content.match(/Total : <strong>([0-9,]+)<\/strong> avions/)[1].replace(/,/g, ''));
+    if (avions < nb_avions) {
+        /* In case some plane are currently unavailable */
+        avions = nb_avions;
+    }
     var reputation = parseInt(content.match(/Réputation : <strong>([0-9,]+)<\/strong>/)[1].replace(/,/g, ''));
-    var pistes     = parseInt(content.match(/décollage : <strong>([0-9,]+)<\/strong>/)[1]);
+    var pistes     = parseInt(content.match(/décollage : <strong>([0-9,]+)<\/strong>/)[1].replace(/,/g, ''));
     var radars     = content.match(/<strong>([0-9,]+)<\/strong> actifs? \(<strong>([0-9,]+)<\/strong> avions\) et <strong>([0-9,]+)<\/strong> inactif/);
-    var radars_actifs   = parseInt(radars[1]);
-    var radars_inactifs = parseInt(radars[3]);
-    var detecteurs = parseInt(content.match(/métaux : <strong>([0-9,]+)<\/strong>/)[1]);
-    var detecteurs_actifs = parseInt(content.match(/actifs? pour <strong>([0-9,]+)<\/strong>/)[1]);
-    var parkings    = parseInt(content.match(/Parkings? : <strong>([0-9,]+)<\/strong>/)[1]);
-    var restaurants = parseInt(content.match(/Restaurants? : <strong>([0-9,]+)<\/strong>/)[1]);
-    var sec_agents  = parseInt(content.match(/<strong>([0-9,]+)<\/strong> agents?/)[1]);
-    var caissieres  = parseInt(content.match(/<strong>([0-9,]+)<\/strong> caissières?/)[1]);
+    var radars_actifs   = parseInt(radars[1].replace(/,/g, ''));
+    var radars_inactifs = parseInt(radars[3].replace(/,/g, ''));
+    var detecteurs = parseInt(content.match(/métaux : <strong>([0-9,]+)<\/strong>/)[1].replace(/,/g, ''));
+    var detecteurs_actifs = parseInt(content.match(/actifs? pour <strong>([0-9,]+)<\/strong>/)[1].replace(/,/g, ''));
+    var parkings    = parseInt(content.match(/Parkings? : <strong>([0-9,]+)<\/strong>/)[1].replace(/,/g, ''));
+    var restaurants = parseInt(content.match(/Restaurants? : <strong>([0-9,]+)<\/strong>/)[1].replace(/,/g, ''));
+    var sec_agents  = parseInt(content.match(/<strong>([0-9,]+)<\/strong> agents?/)[1].replace(/,/g, ''));
+    var caissieres  = parseInt(content.match(/<strong>([0-9,]+)<\/strong> caissières?/)[1].replace(/,/g, ''));
     $("td.section table:first tbody").append('<tr class="action_list"><td colspan="2" width="100%" align="center"><br><strong>Liste des actions :</strong></td></tr>');
     var action_count = 0;
     
@@ -1107,15 +1112,15 @@ case 'votre-aeroport':
             $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange">Nombre de détecteurs de métaux actifs suffisant, mais attention lors de l\'achat d\'un avion !</font></td></tr>');
             action_count++;
         }
-        /* Security agents */
-        if (sec_agents < ((nb_avions*2) + (parkings*3))) {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">Nombre d\'agents de sécurité insuffisant ('+sec_agents+' / '+((nb_avions*2) + (parkings*3))+') !</font></td></tr>');
-            action_count++;
-        }
-        else if (sec_agents < ((entrepots*2) + (parkings*3))) {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange">Nombre d\'agents de sécurité suffisant, mais attention lors de l\'achat d\'un avion !</font></td></tr>');
-            action_count++;
-        }
+    }
+    /* Security agents */
+    if (sec_agents < ((nb_avions*2) + (parkings*3))) {
+        $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">Nombre d\'agents de sécurité insuffisant ('+sec_agents+' / '+((nb_avions*2) + (parkings*3))+') !</font></td></tr>');
+        action_count++;
+    }
+    else if (sec_agents < ((entrepots*2) + (parkings*3))) {
+        $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange">Nombre d\'agents de sécurité suffisant, mais attention lors de l\'achat d\'un avion !</font></td></tr>');
+        action_count++;
     }
     /* Check parkings & restaurants */
     if (entrepots > 3) {
