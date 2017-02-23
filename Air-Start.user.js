@@ -5,7 +5,7 @@
 // @include     http://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.32.6
+// @version     0.33.1
 // @description Calcule la faisabilitée des missions
 // @author      Passific
 // @grant       GM_getValue
@@ -292,6 +292,29 @@ function go_maintenance (avion)
             set_maintenance(avion);
         } else if ($(data).text().match(/votre avion ne peut être mis actuellement en maintenance/)) {
             alert("L'avion ne peut être mis actuellement en maintenance...");
+        } else {
+            /* Erreur */ 
+        }
+        ajax_stop();
+    })
+    .fail(function() {
+        /* error */
+        ajax_stop();
+    });
+}
+
+function go_casse (avion)
+{
+    ajax_start();
+    $.ajax({
+        url: "compte.php?page=action&action=10&id_avion="+avion,
+        async: false
+    })
+    .done(function(data) {
+        if ($(data).text().match(/L'avion a bien été mis à la casse/)) {
+            set_maintenance(avion);
+        } else if ($(data).text().match(/votre avion ne peut être/)) {
+            alert("L'avion ne peut être mis actuellement à la casse...");
         } else {
             /* Erreur */ 
         }
@@ -772,6 +795,7 @@ case "vos-avions":
                         nb_inactive_avion++;
                     } else if (null != tableData[4].innerHTML.match(/500,000 km/)) {
                         tableData[2].innerHTML = "<b><font color='red'>HS</font></b>";
+                        tableData[4].innerHTML = "L'avion a fait plus de 500,000 km, il n'est plus en état de voler.<br> <a class='lien go_casse' data_index='"+index+"' data_id='"+tmp_avion+"'>Mettre à la casse ( 30,000 $ )</a>"
                     } else {
                         tableData[2].innerHTML = "M";
                         if (undefined != mes_avions[id_aeroport][tmp_avion]['h_maint'] && FIN_MAINTENANCE) {
@@ -832,6 +856,16 @@ case "vos-avions":
             $($(".vosavions:first tr")[$(this).attr("data_index")]).find('td')[2-REMOVE_THUMBNAIL].innerHTML = "M";
             $($(".vosavions:first tr")[$(this).attr("data_index")]).find('td')[4-REMOVE_THUMBNAIL].innerHTML
                 = "Fin de maintenance à <b>"+ mes_avions[id_aeroport][$(this).attr("data_id")]['h_maint'] +"</b>";
+        } else {/* fallback */
+            //window.location.assign("compte.php?page=action&action=30&id_avion="+$(this).attr("data_id"));
+        }
+    });
+    $(".go_casse").on("click", function() {
+        go_casse($(this).attr("data_id"));
+        if (undefined != mes_avions[id_aeroport][$(this).attr("data_id")]['h_maint']) {
+            $($(".vosavions:first tr")[$(this).attr("data_index")]).find('td')[2-REMOVE_THUMBNAIL].innerHTML = "HS";
+            $($(".vosavions:first tr")[$(this).attr("data_index")]).find('td')[4-REMOVE_THUMBNAIL].innerHTML
+                = "L'avion est à la casse.";
         } else {/* fallback */
             //window.location.assign("compte.php?page=action&action=30&id_avion="+$(this).attr("data_id"));
         }
