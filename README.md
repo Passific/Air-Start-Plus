@@ -21,3 +21,4 @@ Rendez-vous simplement à cette adresse : https://raw.githubusercontent.com/Pass
 
 ## Limitations
 * Les groupes ne sont pas gérés pour l'instant
+* Les avions en ventes ne sont pas gérés si la vente est annulée

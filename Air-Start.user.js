@@ -5,15 +5,14 @@
 // @include     http://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.33.1
+// @version     0.34.6
 // @description Calcule la faisabilitée des missions
 // @author      Passific
-// @grant       GM_getValue
-// @grant       GM_setValue
-// @grant       GM_addStyle
-// @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js
+// @grant       none
+// @require     https://gist.githubusercontent.com/arantius/3123124/raw/grant-none-shim.js
+// @require     http://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js
 // @require     https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start-cts-20150926.js
-// @require     https://raw.githubusercontent.com/sizzlemctwizzle/GM_config/46277597ff1143a75512d28a5649496a7a01378f/gm_config.js
+// @require     https://raw.githubusercontent.com/sizzlemctwizzle/GM_config/6a82709680bbeb3bd2041a4345638b628d537c96/gm_config.js
 // @run-at      document-end
 // ==/UserScript==
 
@@ -22,10 +21,14 @@ console.time("Air-Start-Plus");
 /****************************
  *       Configuration      *
  ***************************/
+var embed = document.createElement("embed");
+document.body.appendChild(embed);
+
 GM_config.init(
 {
     'id': 'Air-Start-Plus',
     'title':"Air-Start+ (v"+GM_info.script.version+") - Options",
+    'frame': embed, /* Element used for the panel */
     'fields':/* Fields object */ 
     {
         'WARNING_LEVEL': {
@@ -129,7 +132,7 @@ GM_config.init(
             'section': [null, 'Actions sur la sauvegarde'],
             'type': 'button',
             'click': function() { // Function to call when button is clicked
-                save_blocknote(false);
+                save_blocknote_fn(false);
             }
         },
         'Restauration': {
@@ -230,7 +233,7 @@ function read_blocknote ()
         if (null != tmp) {
             mes_avions = tmp;
             /* Save local settings */
-            GM_setValue('mes_avions', mes_avions);
+            GM_setValue('mes_avions', JSON.stringify(mes_avions));
             var this_time = new Date();
             GM_setValue('last_session', this_time.getTime());
             alert("Lecture de la sauvegarde OK !");
@@ -246,7 +249,7 @@ function read_blocknote ()
 }
 
 /* Save backup in the notepad */
-function save_blocknote(silent)
+function save_blocknote_fn(silent)
 {
     if (!SAVE_BLOCKNOTE) {
         alert("Sauvegarde désactivée dans les paramètres...");
@@ -326,6 +329,21 @@ function go_casse (avion)
     });
 }
 
+function missing_plane (avion)
+{
+    $(".vosavions:first").append(
+        "<tr id='missing"+avion+"'>" +
+        "<td class='vosavions7' colspan='9'>" +
+        "<b>"+mes_avions[id_aeroport][avion]['type']+" - "+mes_avions[id_aeroport][avion]['ref']+"</b>" +
+        " n'est plus disponible, vous devez l'acheter - " +
+        "<a href='compte.php?page=acheter2&action=8&av="+avion_t[ mes_avions[id_aeroport][avion]['type'] ]['id']
+        +"' data_id='"+avion
+        +"' data_type='"+mes_avions[id_aeroport][avion]['type']
+        +"' class='lien missing_plane'>Cliquez ici</a> " +
+        "(ou <a class='lien delete_plane' data_id='"+avion+"'>Supprimer</a>)" +
+        "</td></tr>\n");
+}
+
 function change_moteur (avion, moteur)
 {
     ajax_start();
@@ -338,7 +356,7 @@ function change_moteur (avion, moteur)
     .done(function(data) {
         if ( $(data).text().match("L'avion va bien recevoir ses nouveaux moteurs") ) {
             mes_avions[id_aeroport][avion]['m_type'] = moteur;
-            save_mes_avions(SILENT_SAVE);
+            save_mes_avions();
             if (FIN_MAINTENANCE) {
                 set_maintenance(avion);
             }
@@ -363,11 +381,11 @@ function change_moteur (avion, moteur)
     });
 }
 
-function save_mes_avions(silent)
+function save_mes_avions()
 {
-    GM_setValue('mes_avions', mes_avions);
+    GM_setValue('mes_avions', JSON.stringify(mes_avions));
     if (SAVE_BLOCKNOTE && AUTO_SAVE)
-        save_blocknote(silent);
+        save_blocknote_fn(SILENT_SAVE);
 }
 
 function create_avion(id, ref, type)
@@ -380,7 +398,7 @@ function create_avion(id, ref, type)
         'mission_pays':0
     };
     mes_avions[id_aeroport][id] = tmp_obj;
-    save_mes_avions(SILENT_SAVE);
+    save_mes_avions();
 }
 
 function set_maintenance(avion)
@@ -389,7 +407,7 @@ function set_maintenance(avion)
     mes_avions[id_aeroport][avion]['h_maint'] = (tmp_date.getHours()<10?"0":"") + tmp_date.getHours() + "h"
                                  + (tmp_date.getMinutes()<10?"0":"") + tmp_date.getMinutes();
     update_title(--nb_inactive_avion);
-    save_mes_avions(SILENT_SAVE);
+    save_mes_avions();
 }
 
 // Source: http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
@@ -554,8 +572,8 @@ var content = document.documentElement.innerHTML;
 //var id_pseudo = document.cookie.match(/id_pseudo=(\d+);/)[1];
 var id_avion     = GM_getValue('id_avion', "1107303");
 var id_aeroport  = GM_getValue('id_aeroport', "0"); //13778
-var mes_avions   = GM_getValue('mes_avions', null);
-var mes_aeroport = GM_getValue('mes_aeroport', null);
+var mes_avions   = JSON.parse(GM_getValue('mes_avions', null));
+var mes_aeroport = JSON.parse(GM_getValue('mes_aeroport', null));
 
 
 /****************************
@@ -568,7 +586,7 @@ if (content.match("vous n'êtes pas connecté")) {
 }
 
 /* If no local copy, retreive the backup in the notepad */
-if (null == mes_avions && SAVE_BLOCKNOTE) {
+if ((('null' == mes_avions) || (null == mes_avions)) && SAVE_BLOCKNOTE) {
     read_blocknote();
 
 /* If local copy OK, check its age */
@@ -579,7 +597,7 @@ if (null == mes_avions && SAVE_BLOCKNOTE) {
         if (confirm("Voulez-vous charger la sauvegarde ?")) {
             read_blocknote();
             /* Reset current airport */
-            if (null != mes_aeroport) {
+            if (! (('null' == mes_aeroport) || (null == mes_aeroport))) {
                 window.location.assign("compte.php?page=aeroport");
                 throw new Error("Stopped JavaScript.");
             }
@@ -592,7 +610,7 @@ if (null == mes_avions && SAVE_BLOCKNOTE) {
 }
 
 /* Otherwise, initiate a clean start */
-if (null == mes_avions) {
+if (('null' == mes_avions) || (null == mes_avions)) {
     if("vos-avions" != page) {
         /* Goto planes */
         window.location.assign("compte.php?page=vos-avions");
@@ -612,7 +630,7 @@ if (undefined == mes_avions[id_aeroport]) {
             create_avion(tmp_avion, tableData[3].textContent, tableData[1].textContent);
         }
     });
-    save_mes_avions(SILENT_SAVE);
+    save_mes_avions();
 }
 
 
@@ -625,7 +643,7 @@ $("input:first").focus();
 var menu_bar = '<table id="mytable"><tbody id="last_mission"><tr>' +
         '<td><a class="lien" id="gm_option">Options</a></td>';
 
-if (null != mes_aeroport) {
+if (('null' != mes_aeroport) && (null != mes_aeroport)) {
     menu_bar += '<td><form id="form_aeroport" action="compte.php?page=action&amp;action=15" method="post"><select id="select_aeroport" name="id_aeroport">';
     
     for (key in mes_aeroport) {
@@ -673,7 +691,7 @@ $('#select_avion').change(function()
         check_missions();
 });
 
-if (null != mes_aeroport) {
+if (('null' != mes_aeroport) && (null != mes_aeroport)) {
     $('#select_aeroport').change(function()
     {
         GM_setValue('next_id_aeroport', $('#select_aeroport').val() );
@@ -692,7 +710,7 @@ case "vos-avions":
     if (SAVE_BLOCKNOTE && !AUTO_SAVE ) {
         $(".vosavions:first").after('<br><span><a id="save_avion" class="lien">Sauvegarde</a> / <a id="restore_avion" class="lien">Restauration</a> manuelle des avions.<br>'+
                                      '<a href="compte.php?page=mp&tp=4" class="lien">Modifier</a> la sauvegarde.</span><br>');
-        $("#save_avion").on("click", function() {save_blocknote(false);} );
+        $("#save_avion").on("click", function() {save_blocknote_fn(false);} );
         $("#restore_avion").on("click", function() {read_blocknote();} );
     }
     
@@ -709,8 +727,8 @@ case "vos-avions":
                 
                 /* Update if plane just bought */
                 if (null == mes_avions[id_aeroport][tmp_avion]) {
-                    tmp_plane = GM_getValue('avion_to_buy', null);
-                    if (null != tmp_plane) {
+                    tmp_plane = JSON.parse(GM_getValue('avion_to_buy', null));
+                    if (! ((null == tmp_plane) || ('null' == tmp_plane)) ) {
                         if (tableData[1].textContent == tmp_plane[1]) {
                             if (null != mes_avions[id_aeroport][tmp_plane[0]]) {
                                 /* Rename the remplaced plane */
@@ -719,7 +737,7 @@ case "vos-avions":
                                 mes_avions[id_aeroport][tmp_avion]['ref'] = tableData[3].textContent;
                                 if (mes_avions[id_aeroport][tmp_avion]['m_type'] <= 4)
                                     mes_avions[id_aeroport][tmp_avion]['m_type'] = 1;
-                                save_mes_avions(SILENT_SAVE);
+                                save_mes_avions();
                                 GM_setValue('avion_to_buy', null);
                                 alert("Le "+tmp_plane[1]+" a été remplacé !");
                             } else {
@@ -740,7 +758,7 @@ case "vos-avions":
                     isInactive = 1;
                     if (null != mes_avions[id_aeroport][tmp_avion]['h_maint'] && FIN_MAINTENANCE) {
                         delete mes_avions[id_aeroport][tmp_avion]['h_maint'];
-                        save_mes_avions(SILENT_SAVE);
+                        save_mes_avions();
                     }
                 }
                 etat_moteur = tableData[9].innerHTML.match(/([0-9,]+) \/ ([0-9,]+)/);
@@ -798,7 +816,10 @@ case "vos-avions":
                         tableData[4].innerHTML = "L'avion a fait plus de 500,000 km, il n'est plus en état de voler.<br> <a class='lien go_casse' data_index='"+index+"' data_id='"+tmp_avion+"'>Mettre à la casse ( 30,000 $ )</a>"
                     } else {
                         tableData[2].innerHTML = "M";
-                        if (undefined != mes_avions[id_aeroport][tmp_avion]['h_maint'] && FIN_MAINTENANCE) {
+                        if (null != tableData[4].innerHTML.match(/vente/)) {
+                          /* L'avion est en vente */
+                        }
+                        else if (undefined != mes_avions[id_aeroport][tmp_avion]['h_maint'] && FIN_MAINTENANCE) {
                             tableData[4].innerHTML = "Fin de maintenance à <b>" + mes_avions[id_aeroport][tmp_avion]['h_maint'] + "</b>";
                         }
                     }
@@ -816,17 +837,7 @@ case "vos-avions":
         if (plane_count < plane_count_default) {
             for (avion in mes_avions[id_aeroport]) {
                 if (current_planes.indexOf(avion) < 0 ) {
-                    $(".vosavions:first").append(
-                        "<tr id='missing"+avion+"'>" +
-                            "<td class='vosavions7' colspan='9'>" +
-                               "<b>"+mes_avions[id_aeroport][avion]['type']+" - "+mes_avions[id_aeroport][avion]['ref']+"</b>" +
-                               " n'est plus disponible, vous devez l'acheter - " +
-                               "<a href='compte.php?page=acheter2&action=8&av="+avion_t[ mes_avions[id_aeroport][avion]['type'] ]['id']
-                                                               +"' data_id='"+avion
-                                                               +"' data_type='"+mes_avions[id_aeroport][avion]['type']
-                                                               +"' class='lien missing_plane'>Cliquez ici</a> " +
-                               "(ou <a class='lien delete_plane' data_id='"+avion+"'>Supprimer</a>)" +
-                        "</td></tr>\n");
+                    missing_plane (avion);
                 }
             }
         } else {
@@ -834,14 +845,14 @@ case "vos-avions":
         }
         $(".missing_plane").on("click", function() {
             /* Plane ID, Plane Type */
-            GM_setValue('avion_to_buy', [$(this).attr("data_id"), $(this).attr("data_type")] );
+            GM_setValue('avion_to_buy', JSON.stringify([$(this).attr("data_id"), $(this).attr("data_type")]) );
         });
         $(".delete_plane").on("click", function() {
             if (null != mes_avions[id_aeroport][ $(this).attr("data_id") ])
             if (confirm("Voulez-vous vraiment supprimer cet avion ?")) {
                 delete mes_avions[id_aeroport][ $(this).attr("data_id") ];
                 GM_setValue('avion_to_buy', null);
-                save_mes_avions(SILENT_SAVE);
+                save_mes_avions();
                 $("#missing"+$(this).attr("data_id")).remove();
             }
         });
@@ -866,6 +877,9 @@ case "vos-avions":
             $($(".vosavions:first tr")[$(this).attr("data_index")]).find('td')[2-REMOVE_THUMBNAIL].innerHTML = "HS";
             $($(".vosavions:first tr")[$(this).attr("data_index")]).find('td')[4-REMOVE_THUMBNAIL].innerHTML
                 = "L'avion est à la casse.";
+            if (MISSING_PLANES) {
+               missing_plane($(this).attr("data_id"));
+            }
         } else {/* fallback */
             //window.location.assign("compte.php?page=action&action=30&id_avion="+$(this).attr("data_id"));
         }
@@ -907,7 +921,7 @@ case 'vos-missions1':
            if (confirm("Vous êtes sur de vouloir faire ce changment ?")) {
                mes_avions[id_aeroport][id_avion]['mission_tp'] = $(this).attr("data_tp");
                mes_avions[id_aeroport][id_avion]['mission_pays'] = $(this).attr("data_pays");
-               save_mes_avions(SILENT_SAVE);
+               save_mes_avions();
            }
         }
     });
@@ -940,7 +954,7 @@ case 'action':
     if (15 == action) {
         if ( content.match("Vous venez de vous connecter avec succ") ) {
             var tmp = GM_getValue('next_id_aeroport', null);
-            if (null != tmp) {
+            if (! ((null == tmp) || ('null' == tmp)) ) {
                 id_aeroport = tmp;
                 GM_setValue('id_aeroport', id_aeroport);
             }
@@ -960,24 +974,24 @@ case 'action':
     else if (9 == action) {
         if ( content.match("L'avion va bien recevoir ses nouveaux moteurs") ) {
             var tmp = GM_getValue('moteur_to_buy', null);
-            if (null != tmp) {
+            if (! ((null == tmp) || ('null' == tmp)) ) {
                 mes_avions[id_aeroport][avion]['m_type'] = tmp;
-                save_mes_avions(SILENT_SAVE);
+                save_mes_avions();
             }
             if (FIN_MAINTENANCE) {
                 set_maintenance(avion);
             }
         }
         GM_setValue('moteur_to_buy', null);
-    } else if (null != GM_getValue('moteur_to_buy', null)) {
-        GM_setValue('moteur_to_buy', null);
     }
-    
     /* Maintenance des 100,000km */
     else if (30 == action && FIN_MAINTENANCE) {
         if ( content.match("Votre avion est maintenant en maintenance") ) {
             set_maintenance(avion);
         }
+    /* Reset moteur_to_buy */
+    } else {
+        GM_setValue('moteur_to_buy', null);
     }
     break;
     
@@ -1010,7 +1024,7 @@ case 'mp':
     
 case 'aeroport':
     if (undefined != $('select[name="id_aeroport"]').val()) {
-        if (null == mes_aeroport) {
+        if (('null' == mes_aeroport) || (null == mes_aeroport)) {
             mes_aeroport = {};
         }
         
@@ -1033,7 +1047,7 @@ case 'aeroport':
                 id_aeroport = val.value;
                 mes_avions[id_aeroport] = mes_avions["0"];
                 delete mes_avions["0"];
-                save_mes_avions(SILENT_SAVE);
+                save_mes_avions();
             }
         });
         
@@ -1044,7 +1058,7 @@ case 'aeroport':
             }
         }
         
-        GM_setValue('mes_aeroport', mes_aeroport);
+        GM_setValue('mes_aeroport', JSON.stringify(mes_aeroport));
         
         id_aeroport = $('select[name="id_aeroport"]').val();
         GM_setValue('id_aeroport', id_aeroport);
