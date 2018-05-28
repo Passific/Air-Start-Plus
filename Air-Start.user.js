@@ -3,14 +3,15 @@
 // @namespace   air-start
 // @icon        http://www.air-start.net/images/design/favicon.gif
 // @include     http://www.air-start.net/compte.php*
+// @include     https://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.34.6
+// @version     0.34.7
 // @description Calcule la faisabilitée des missions
 // @author      Passific
 // @grant       none
 // @require     https://gist.githubusercontent.com/arantius/3123124/raw/grant-none-shim.js
-// @require     http://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js
+// @require     https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js
 // @require     https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start-cts-20150926.js
 // @require     https://raw.githubusercontent.com/sizzlemctwizzle/GM_config/6a82709680bbeb3bd2041a4345638b628d537c96/gm_config.js
 // @run-at      document-end
