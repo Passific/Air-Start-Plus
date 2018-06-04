@@ -6,13 +6,13 @@
 // @include     https://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.34.7
+// @version     0.34.9
 // @description Calcule la faisabilitée des missions
 // @author      Passific
 // @grant       none
 // @require     https://gist.githubusercontent.com/arantius/3123124/raw/grant-none-shim.js
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js
-// @require     https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start-cts-20150926.js
+// @require     https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start-cts.js
 // @require     https://raw.githubusercontent.com/sizzlemctwizzle/GM_config/6a82709680bbeb3bd2041a4345638b628d537c96/gm_config.js
 // @run-at      document-end
 // ==/UserScript==
@@ -153,23 +153,23 @@ GM_config.init(
     }
 });
 
-var WARNING_LEVEL      = GM_config.get('WARNING_LEVEL');
-var SORT_BY            = GM_config.get('SORT_BY');
-var ENABLE_ESCALE      = GM_config.get('ENABLE_ESCALE');
-var ESCALE_BONUS_H     = GM_config.get('ESCALE_BONUS_H');
-var TAB_DYN_TITLE      = GM_config.get('TAB_DYN_TITLE');
-var AUTO_REFRESH       = GM_config.get('AUTO_REFRESH');
-var MAX_BEST           = GM_config.get('MAX_BEST');
-var ENGIME_REVERSE     = GM_config.get('ENGIME_REVERSE');
-var ENGIME_EARLY       = GM_config.get('ENGIME_EARLY');
-var FIN_MAINTENANCE    = GM_config.get('FIN_MAINTENANCE');
-var REMOVE_THUMBNAIL   = GM_config.get('REMOVE_THUMBNAIL');
-var DIRECT_LINK        = GM_config.get('DIRECT_LINK');
-var MISSING_PLANES     = GM_config.get('MISSING_PLANES');
-var SAVE_BLOCKNOTE     = GM_config.get('SAVE_BLOCKNOTE');
-var SAVE_LOGIN_CHECK   = GM_config.get('SAVE_LOGIN_CHECK');
-var AUTO_SAVE          = GM_config.get('AUTO_SAVE');
-var SILENT_SAVE        = GM_config.get('SILENT_SAVE');
+const WARNING_LEVEL      = GM_config.get('WARNING_LEVEL');
+const SORT_BY            = GM_config.get('SORT_BY');
+const ENABLE_ESCALE      = GM_config.get('ENABLE_ESCALE');
+const ESCALE_BONUS_H     = GM_config.get('ESCALE_BONUS_H');
+const TAB_DYN_TITLE      = GM_config.get('TAB_DYN_TITLE');
+const AUTO_REFRESH       = GM_config.get('AUTO_REFRESH');
+const MAX_BEST           = GM_config.get('MAX_BEST');
+const ENGIME_REVERSE     = GM_config.get('ENGIME_REVERSE');
+const ENGIME_EARLY       = GM_config.get('ENGIME_EARLY');
+const FIN_MAINTENANCE    = GM_config.get('FIN_MAINTENANCE');
+const REMOVE_THUMBNAIL   = GM_config.get('REMOVE_THUMBNAIL');
+const DIRECT_LINK        = GM_config.get('DIRECT_LINK');
+const MISSING_PLANES     = GM_config.get('MISSING_PLANES');
+const SAVE_BLOCKNOTE     = GM_config.get('SAVE_BLOCKNOTE');
+const SAVE_LOGIN_CHECK   = GM_config.get('SAVE_LOGIN_CHECK');
+const AUTO_SAVE          = GM_config.get('AUTO_SAVE');
+const SILENT_SAVE        = GM_config.get('SILENT_SAVE');
 
 /* To ask user if wait for backup complete */
 window.onbeforeunload = null;
@@ -1002,8 +1002,8 @@ case 'boutique1':
     if (5 == affiche) {
         var citerne = content.match(/<strong>([0-9,]+)<\/strong> \/ <strong>([0-9,]+)<\/strong> litres/);
         var citerne_lvl = Math.round((parseInt(citerne[1].replace(/,/g, ''))*100)/parseInt(citerne[2].replace(/,/g, '')));
-        $('img[src="images/divers/citerne.gif"]').after('<br><progress max="100" value="'+citerne_lvl+'"></progress> ('+citerne_lvl+'%)'
-               + '<br>Soit '+Math.floor(citerne[1].replace(/,/g, '')/plane_count_default).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")+' litres par avion');
+        $('img[src="images/divers/citerne.gif"]').after('<br><progress max="100" value="'+citerne_lvl+'"></progress> (<b>'+citerne_lvl+'</b>%)'
+               + '<br>Soit <b>'+Math.floor(citerne[1].replace(/,/g, '')/plane_count_default).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")+'</b> litres par avion');
         
         $('input[name="cq"]').val(parseInt(content.match(/Place.*>([0-9,]+)</i)[1].replace(/,/g, ''), 10));
     }
@@ -1073,10 +1073,6 @@ case 'votre-aeroport':
     /* Check list for the airport */
     var entrepots  = parseInt(content.match(/entrepôts : <strong>([0-9,]+)<\/strong>/)[1].replace(/,/g, ''));
     var avions     = parseInt(content.match(/Total : <strong>([0-9,]+)<\/strong> avions/)[1].replace(/,/g, ''));
-    if (avions < nb_avions) {
-        /* In case some plane are currently unavailable */
-        avions = nb_avions;
-    }
     var reputation = parseInt(content.match(/Réputation : <strong>([0-9,]+)<\/strong>/)[1].replace(/,/g, ''));
     var pistes     = parseInt(content.match(/décollage : <strong>([0-9,]+)<\/strong>/)[1].replace(/,/g, ''));
     var radars     = content.match(/<strong>([0-9,]+)<\/strong> actifs? \(<strong>([0-9,]+)<\/strong> avions\) et <strong>([0-9,]+)<\/strong> inactif/);
@@ -1088,7 +1084,7 @@ case 'votre-aeroport':
     var restaurants = parseInt(content.match(/Restaurants? : <strong>([0-9,]+)<\/strong>/)[1].replace(/,/g, ''));
     var sec_agents  = parseInt(content.match(/<strong>([0-9,]+)<\/strong> agents?/)[1].replace(/,/g, ''));
     var caissieres  = parseInt(content.match(/<strong>([0-9,]+)<\/strong> caissières?/)[1].replace(/,/g, ''));
-    $("td.section table:first tbody").append('<tr class="action_list"><td colspan="2" width="100%" align="center"><br><strong>Liste des actions :</strong></td></tr>');
+    $("td.section table:first tbody").append('<tr class="action_list"><td colspan="2" width="100%" align="center"><br><strong>Visite avant vol :</strong></td></tr>');
     var action_count = 0;
     
     next_reputation = {
@@ -1102,94 +1098,103 @@ case 'votre-aeroport':
         "114" : 250000,
         "200" : 0,
     }
+    if (avions < nb_avions) {
+        /* In case some plane are currently unavailable */
+        avions = nb_avions;
+        $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange"><b>&#x26A0;</b> Certains avions ne sont plus disponibles, mais il sont pris en compte dans la visite avant vol.</font></td></tr>');
+    }
     /* Check reputation */
     if ((undefined != next_reputation[entrepots]) && (0 != next_reputation[entrepots])) {
         var missing_rep = next_reputation[entrepots] - reputation;
         if (missing_rep > 0) {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center">Réputation manquante avant prochain agrandissement : '+format_number(missing_rep)+' / '+format_number(next_reputation[entrepots])+'</td></tr>');
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center">&#x2718; Réputation manquante avant prochain agrandissement : '+format_number(missing_rep)+' / '+format_number(next_reputation[entrepots])+'</td></tr>');
         }
         else if (missing_rep > -500) {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange">Réputation suffisante pour le prochain agrandissement ('+format_number(next_reputation[entrepots])+'), mais faible après achat !</font></td></tr>');
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange"><b>&#x26A0;</b> Réputation suffisante pour le prochain agrandissement ('+format_number(next_reputation[entrepots])+'), mais faible après achat !</font></td></tr>');
         }
         else {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="green">Réputation suffisante pour le prochain agrandissement ('+format_number(next_reputation[entrepots])+') !</font></td></tr>');
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="green">&#x2714; Réputation suffisante pour le prochain agrandissement ('+format_number(next_reputation[entrepots])+') !</font></td></tr>');
         }
     }
     if (reputation < 500) {
         if (reputation < 0) {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">Réputation négative !</font></td></tr>');
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">&#x2718; Réputation négative !</font></td></tr>');
             action_count++;
         }
         else {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange">Réputation faible !</font></td></tr>');
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange"><b>&#x26A0;</b> Réputation faible !</font></td></tr>');
             action_count++;
         }
     }
     /* Check runways */
     if ((pistes*3) < entrepots) {
-        if ((pistes*3) < nb_avions) {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">Pas assez de pistes ('+pistes+' / '+Math.ceil(nb_avions/3)+') !</font></td></tr>');
+        if ((pistes*3) < avions) {
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">&#x2718; Pas assez de pistes ('+pistes+' / '+Math.ceil(avions/3)+') !</font></td></tr>');
             action_count++;
         }
         else {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange">Nombre de pistes suffisant, mais attention lors de l\'achat d\'un avion !</font></td></tr>');
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange"><b>&#x26A0;</b> Nombre de pistes suffisant, mais attention lors de l\'achat d\'un avion !</font></td></tr>');
             action_count++;
         }
     }
     /* Check radars */
     if ((radars_actifs*3) < entrepots) {
-        if ((radars_actifs*3) < nb_avions) {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">Pas assez de radars actifs ('+radars_actifs+' / '+Math.ceil(nb_avions/3)+') !</font></td></tr>');
+        if ((radars_actifs*3) < avions) {
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">&#x2718; Pas assez de radars actifs ('+radars_actifs+' / '+Math.ceil(avions/3)+') !</font></td></tr>');
             action_count++;
         }
         else {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange">Nombre de radars actifs suffisant, mais attention lors de l\'achat d\'un avion !</font></td></tr>');
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange"><b>&#x26A0;</b> Nombre de radars actifs suffisant, mais attention lors de l\'achat d\'un avion !</font></td></tr>');
             action_count++;
         }
         if (0 != radars_inactifs) {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange">Nombre de contrôleur aérien insuffisant ('+radars_actifs+' / '+(radars_actifs+radars_inactifs)+') !</font></td></tr>');
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange"><b>&#x26A0;</b> Nombre de contrôleur aérien insuffisant ('+radars_actifs+' / '+(radars_actifs+radars_inactifs)+') !</font></td></tr>');
             action_count++;
         }
     }
     /* Check metal detectors */
     if (detecteurs_actifs < entrepots) {
-        if (detecteurs_actifs < nb_avions) {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">Pas assez de détecteurs de métaux actifs ('+(detecteurs_actifs*2)+' / '+(nb_avions*2)+') !</font></td></tr>');
+        if (detecteurs_actifs < avions) {
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">&#x2718; Pas assez de détecteurs de métaux actifs ('+(detecteurs_actifs*2)+' / '+(avions*2)+') !</font></td></tr>');
             action_count++;
         }
         else {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange">Nombre de détecteurs de métaux actifs suffisant, mais attention lors de l\'achat d\'un avion !</font></td></tr>');
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange"><b>&#x26A0;</b> Nombre de détecteurs de métaux actifs suffisant, mais attention lors de l\'achat d\'un avion !</font></td></tr>');
             action_count++;
         }
     }
     /* Security agents */
-    if (sec_agents < ((nb_avions*2) + (parkings*3))) {
-        $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">Nombre d\'agents de sécurité insuffisant ('+sec_agents+' / '+((nb_avions*2) + (parkings*3))+') !</font></td></tr>');
+    if (sec_agents < ((avions*2) + (parkings*3))) {
+        $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">&#x2718; Nombre d\'agents de sécurité insuffisant ('+sec_agents+' / '+((avions*2) + (parkings*3))+') !</font></td></tr>');
         action_count++;
     }
     else if (sec_agents < ((entrepots*2) + (parkings*3))) {
-        $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange">Nombre d\'agents de sécurité suffisant, mais attention lors de l\'achat d\'un avion !</font></td></tr>');
+        $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="orange"><b>&#x26A0;</b> Nombre d\'agents de sécurité suffisant, mais attention lors de l\'achat d\'un avion !</font></td></tr>');
         action_count++;
     }
     /* Check parkings & restaurants */
     if (entrepots > 3) {
         if (parkings < 1) {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">Nombre de parking insuffisant (minimum 1) !</font></td></tr>');
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">&#x2718; Nombre de parking insuffisant (minimum 1) !</font></td></tr>');
             action_count++;
         }
         if (restaurants < 1) {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">Nombre de restaurant insuffisant (minimum 1) !</font></td></tr>');
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">&#x2718; Nombre de restaurant insuffisant (minimum 1) !</font></td></tr>');
             action_count++;
         }
         if (caissieres < (restaurants * 5)) {
-            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">Nombre de caissière insuffisant ('+caissieres+' / '+((restaurants<1?1:restaurants) * 5)+') !</font></td></tr>');
+            $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="red">&#x2718; Nombre de caissière insuffisant ('+caissieres+' / '+((restaurants<1?1:restaurants) * 5)+') !</font></td></tr>');
             action_count++;
         }
     }
     
     if (0 == action_count) {
-        $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="green">Aucune action nécessaire !</font></td></tr>');
+        $(".action_list:last").after('<tr class="action_list"><td colspan="2" align="center"><font color="green">&#x2714; Aucune action nécessaire !</font></td></tr>');
     }
+    var citerne = content.match(/<strong>([0-9,]+)<\/strong> \/ <strong>([0-9,]+)<\/strong> litres/);
+    var citerne_lvl = Math.round((parseInt(citerne[1].replace(/,/g, ''))*100)/parseInt(citerne[2].replace(/,/g, '')));
+    $('a[href="compte.php?page=aeroport"]:last').before('<div style="margin-top:-30px;"><progress max="100" value="'+citerne_lvl+'"></progress> (<b>'+citerne_lvl+'</b>%)'
+        + '<br>Soit <b>'+Math.floor(citerne[1].replace(/,/g, '')/plane_count_default).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")+'</b> litres par avion</div><br><br>');
 
 case 'banque':
     if (null != content.match(/banque : <strong>([0-9,]+)<\/strong> \$/)) {
