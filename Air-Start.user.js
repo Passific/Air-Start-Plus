@@ -12,7 +12,7 @@
 // @grant       none
 // @require     https://gist.githubusercontent.com/arantius/3123124/raw/grant-none-shim.js
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js
-// @require     https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start-cts.js
+// @require     https://raw.githubusercontent.com/Passific/Air-Start-Plus/33584318b65dfb7d7e6ca21f11bcb57a7e3a27aa/Air-Start-cts.js
 // @require     https://raw.githubusercontent.com/sizzlemctwizzle/GM_config/6a82709680bbeb3bd2041a4345638b628d537c96/gm_config.js
 // @run-at      document-end
 // ==/UserScript==
