@@ -6,7 +6,7 @@
 // @include     https://www.air-start.net/compte.php*
 // @updateURL   https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
 // @downloadURL https://raw.githubusercontent.com/Passific/Air-Start-Plus/master/Air-Start.user.js
-// @version     0.34.9
+// @version     0.34.10
 // @description Calcule la faisabilitée des missions
 // @author      Passific
 // @grant       none
@@ -1072,7 +1072,7 @@ case 'aeroport':
 case 'votre-aeroport':
     /* Check list for the airport */
     var entrepots  = parseInt(content.match(/entrepôts : <strong>([0-9,]+)<\/strong>/)[1].replace(/,/g, ''));
-    var avions     = parseInt(content.match(/Total : <strong>([0-9,]+)<\/strong> avions/)[1].replace(/,/g, ''));
+    var avions     = parseInt(content.match(/Total : <strong>([0-9,]+)<\/strong> avions?/)[1].replace(/,/g, ''));
     var reputation = parseInt(content.match(/Réputation : <strong>([0-9,]+)<\/strong>/)[1].replace(/,/g, ''));
     var pistes     = parseInt(content.match(/décollage : <strong>([0-9,]+)<\/strong>/)[1].replace(/,/g, ''));
     var radars     = content.match(/<strong>([0-9,]+)<\/strong> actifs? \(<strong>([0-9,]+)<\/strong> avions\) et <strong>([0-9,]+)<\/strong> inactif/);
